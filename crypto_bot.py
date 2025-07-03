@@ -34,7 +34,7 @@ class CryptoBuddy:
         }
         self.deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
 
-def _get_live_price(self, coin_id):
+ def _get_live_price(self, coin_id):
         """Get live price from CoinGecko API (mock implementation)"""
         # In production, replace with actual API call:
         # response = requests.get(f"https://api.coingecko.com/api/v3/simple/price?ids={coin_id}&vs_currencies=usd")
@@ -46,7 +46,7 @@ def _get_live_price(self, coin_id):
         }
         return mock_prices.get(coin_id, 0)
 
-    def get_ai_insight(self, question):
+def get_ai_insight(self, question):
     """Get enhanced analysis from DeepSeek API"""
     if not self.deepseek_api_key:
         return "API key not configured"
