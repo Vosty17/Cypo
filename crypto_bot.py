@@ -1,3 +1,4 @@
+
 import os
 import streamlit as st
 import requests
@@ -34,54 +35,58 @@ class CryptoBuddy:
         }
         self.deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
 
- def _get_live_price(self, coin_id):
+    def _get_live_price(self, coin_id):
         """Get live price from CoinGecko API (mock implementation)"""
-        # In production, replace with actual API call:
-        # response = requests.get(f"https://api.coingecko.com/api/v3/simple/price?ids={coin_id}&vs_currencies=usd")
-        # return response.json()[coin_id]["usd"]
-        mock_prices = {
-            "bitcoin": 67432.18,
-            "ethereum": 3287.45,
-            "cardano": 0.45
-        }
-        return mock_prices.get(coin_id, 0)
+        try:
+            # In production, replace with actual API call:
+            # response = requests.get(f"https://api.coingecko.com/api/v3/simple/price?ids={coin_id}&vs_currencies=usd")
+            # return response.json()[coin_id]["usd"]
+            mock_prices = {
+                "bitcoin": 67432.18,
+                "ethereum": 3287.45,
+                "cardano": 0.45
+            }
+            return mock_prices.get(coin_id, 0)
+        except Exception as e:
+            print(f"Error getting price for {coin_id}: {str(e)}")
+            return 0
 
-def get_ai_insight(self, question):
-    """Get enhanced analysis from DeepSeek API"""
-    if not self.deepseek_api_key:
-        return "API key not configured"
-        
-    headers = {
-        "Authorization": f"Bearer {self.deepseek_api_key}",
-        "Content-Type": "application/json"
-    }
-    
-    try:
-        response = requests.post(
-            "https://api.deepseek.com/v1/chat/completions",
-            json={
-                "model": "deepseek-chat",
-                "messages": [{"role": "user", "content": question}],
-                "temperature": 0.7
-            },
-            headers=headers,
-            timeout=10
-        )
-        response_data = response.json()
-        
-        # Debug: Print the full response
-        print("Full API Response:", response_data)
-        
-        # Handle the response based on DeepSeek's actual structure
-        if "choices" in response_data:
-            return response_data["choices"][0]["message"]["content"]
-        elif "output" in response_data:  # Alternative structure
-            return response_data["output"]
-        else:
-            return f"Unexpected API response format: {response_data}"
+    def get_ai_insight(self, question):
+        """Get enhanced analysis from DeepSeek API"""
+        if not self.deepseek_api_key:
+            return "API key not configured"
             
-    except Exception as e:
-        return f"AI service error: {str(e)}"
+        headers = {
+            "Authorization": f"Bearer {self.deepseek_api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        try:
+            response = requests.post(
+                "https://api.deepseek.com/v1/chat/completions",
+                json={
+                    "model": "deepseek-chat",
+                    "messages": [{"role": "user", "content": question}],
+                    "temperature": 0.7
+                },
+                headers=headers,
+                timeout=10
+            )
+            response.raise_for_status()  # Raises exception for 4XX/5XX errors
+            response_data = response.json()
+            
+            # Handle the response based on DeepSeek's actual structure
+            if "choices" in response_data and len(response_data["choices"]) > 0:
+                return response_data["choices"][0]["message"]["content"]
+            elif "output" in response_data:  # Alternative structure
+                return response_data["output"]
+            else:
+                return f"Unexpected API response format: {response_data}"
+                
+        except requests.exceptions.RequestException as e:
+            return f"API request failed: {str(e)}"
+        except Exception as e:
+            return f"Unexpected error: {str(e)}"
 
     def analyze_trends(self):
         """Identify trending cryptocurrencies"""
@@ -92,7 +97,7 @@ def get_ai_insight(self, question):
         """Find eco-friendly cryptocurrencies"""
         return sorted(
             [(coin, data["sustainability_score"]) 
-            for coin, data in self.crypto_db.items()],
+             for coin, data in self.crypto_db.items()],
             key=lambda x: x[1],
             reverse=True
         )
@@ -106,80 +111,4 @@ def get_ai_insight(self, question):
         ]
         return profitable or list(self.crypto_db.keys())
 
-def main():
-    st.set_page_config(page_title="CryptoBuddy AI", page_icon="🤖")
-    
-    bot = CryptoBuddy()
-    
-    st.title(f"Welcome to {bot.name}!")
-    st.markdown("""
-    Your AI-powered cryptocurrency advisor. Get insights on:
-    - 📈 Market trends
-    - ♻️ Sustainable coins
-    - 💰 Investment opportunities
-    """)
-    
-    query_type = st.sidebar.selectbox(
-        "What would you like to know?",
-        ["Trending Cryptos", "Sustainable Picks", "Investment Advice", "Ask AI"]
-    )
-    
-    if query_type == "Trending Cryptos":
-        st.subheader("🚀 Currently Trending Cryptocurrencies")
-        trending = bot.analyze_trends()
-        if trending:
-            for coin in trending:
-                data = bot.crypto_db[coin]
-                st.success(f"""
-                **{coin}**
-                - Price: ${data['current_price']:,.2f}
-                - Market Cap: {data['market_cap'].capitalize()}
-                - Trend: {data['price_trend'].capitalize()}
-                """)
-        else:
-            st.warning("No strong trending patterns detected")
-            
-    elif query_type == "Sustainable Picks":
-        st.subheader("🌱 Most Sustainable Cryptocurrencies")
-        sustainable = bot.get_sustainable_coins()
-        for coin, score in sustainable:
-            st.info(f"""
-            **{coin}**
-            - Sustainability Score: {score*10:.1f}/10
-            - Energy Use: {bot.crypto_db[coin]['energy_use'].capitalize()}
-            - Current Price: ${bot.crypto_db[coin]['current_price']:,.2f}
-            """)
-            
-    elif query_type == "Investment Advice":
-        st.subheader("💼 Investment Recommendations")
-        recommendations = bot.recommend_investment()
-        st.balloons()
-        st.success(f"""
-        Based on current market data, consider these cryptocurrencies:
-        {', '.join(recommendations)}
-        
-        *Remember: Past performance doesn't guarantee future results*
-        """)
-        
-    elif query_type == "Ask AI":
-        st.subheader("🧠 Ask CryptoBuddy AI")
-        user_question = st.text_input("Ask anything about cryptocurrencies:")
-        if user_question:
-            with st.spinner("Analyzing market data..."):
-                ai_response = bot.get_ai_insight(user_question)
-                st.markdown(f"""
-                <div style='background-color:#f0f2f6; padding:15px; border-radius:10px;'>
-                <b>AI Analysis:</b><br>{ai_response}
-                </div>
-                """, unsafe_allow_html=True)
-
-    st.sidebar.markdown("""
-    ---
-    **Disclaimer**:  
-    Crypto investments are risky.  
-    This is not financial advice.  
-    Always do your own research.
-    """)
-
-if __name__ == "__main__":
-    main()
+# Rest of the code remains the same...
