@@ -1,7 +1,6 @@
 
 import streamlit as st
 from crypto_bot import CryptoBuddy  # Your existing class
-
 # Initialize bot
 bot = CryptoBuddy()
 
