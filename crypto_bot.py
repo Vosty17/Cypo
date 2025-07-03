@@ -47,29 +47,41 @@ class CryptoBuddy:
         return mock_prices.get(coin_id, 0)
 
     def get_ai_insight(self, question):
-        """Get enhanced analysis from DeepSeek API"""
-        if not self.deepseek_api_key:
-            return "API key not configured"
-            
-        headers = {
-            "Authorization": f"Bearer {self.deepseek_api_key}",
-            "Content-Type": "application/json"
-        }
+    """Get enhanced analysis from DeepSeek API"""
+    if not self.deepseek_api_key:
+        return "API key not configured"
         
-        try:
-            response = requests.post(
-                "https://api.deepseek.com/v1/chat/completions",
-                json={
-                    "model": "deepseek-chat",
-                    "messages": [{"role": "user", "content": question}],
-                    "temperature": 0.7
-                },
-                headers=headers,
-                timeout=10
-            )
-            return response.json()["choices"][0]["message"]["content"]
-        except Exception as e:
-            return f"AI service error: {str(e)}"
+    headers = {
+        "Authorization": f"Bearer {self.deepseek_api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        response = requests.post(
+            "https://api.deepseek.com/v1/chat/completions",
+            json={
+                "model": "deepseek-chat",
+                "messages": [{"role": "user", "content": question}],
+                "temperature": 0.7
+            },
+            headers=headers,
+            timeout=10
+        )
+        response_data = response.json()
+        
+        # Debug: Print the full response
+        print("Full API Response:", response_data)
+        
+        # Handle the response based on DeepSeek's actual structure
+        if "choices" in response_data:
+            return response_data["choices"][0]["message"]["content"]
+        elif "output" in response_data:  # Alternative structure
+            return response_data["output"]
+        else:
+            return f"Unexpected API response format: {response_data}"
+            
+    except Exception as e:
+        return f"AI service error: {str(e)}"
 
     def analyze_trends(self):
         """Identify trending cryptocurrencies"""
