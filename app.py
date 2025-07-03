@@ -25,7 +25,7 @@ if user_coin:
 
 if custom_question:
     with st.spinner("🧠 Analyzing..."):
-        response = bot.get_ai_insight(f"{custom_about} {user_coin}" if user_coin else custom_question)
+        response = bot.get_ai_insight(f"{custom_question} {user_coin}" if user_coin else custom_question)
         st.markdown(f"""
         <div style='background:#f0f2f6;padding:10px;border-radius:8px;'>
         💡 <b>AI Response:</b><br>{response}
